@@ -6,6 +6,7 @@ import cv2
 from pprint import pprint
 from itertools import filterfalse as reject
 from time import sleep
+from models.configuration import Config
 
 GREEN = (0, 255, 0)
 
@@ -87,32 +88,52 @@ def filter_by_area(contours, min_area: int, max_area: int):
     return f
 
 
-def decode_matrix(image):
+def find_extreme_points(contour):
+    peri = cv.arcLength(contour, True)
+    cv.approxPolyDP(contour, 0.02 * peri, True)
 
+
+def decode_matrix(image, config: Config):
     gray = cv.cvtColor(image,  cv.COLOR_BGR2GRAY)
-    blurred = cv.medianBlur(gray,  3)
+    blurred = cv.medianBlur(gray,  config.blur_size)
 
-    thresholded = cv.adaptiveThreshold(
-        blurred, 255, cv.ADAPTIVE_THRESH_MEAN_C,
-        cv.THRESH_BINARY, 51, 11)
+    if config.adaptive_threshold:
+        thresholded = cv.adaptiveThreshold(
+            blurred, config.threshold_max, cv.ADAPTIVE_THRESH_MEAN_C,
+            cv.THRESH_BINARY_INV, config.block_size,  config.c)
+    else:
+        _, thresholded = cv.threshold(
+            blurred,
+            config.threshold,
+            config.threshold_max,
+            cv.THRESH_BINARY_INV
+        )
+
     contours, heirarchy = cv.findContours(
-        blurred,
+        thresholded,
         cv.RETR_TREE,
         cv.CHAIN_APPROX_NONE)
 
     contours = list(enumerate(contours))
+
     contours_with_valid_area = filter_by_area(
         contours,
-        10000,
-        70000,
+        config.area_min,
+        config.area_max,
     )
 
-    # quads = find_quads(contours)
-    # print(f"n_quads {len(quads)}")
-    # print(f"n_contours {len(contours)}")
-    # print(f"diff {len(contours) - len(quads)}")
-    return [draw_contours_on_image(contours, thresholded),]
-    # draw_contours_on_image(quads, image)]
+    ret_val = {
+        "thresholded": thresholded,
+        "blurred": blurred,
+    }
+
+    ret_val = {k: cv.cvtColor(v, cv.COLOR_GRAY2RGB)
+               for k, v in ret_val.items()}
+    ret_val["final"] = cv.cvtColor(
+        draw_contours_on_image(contours, image),
+        cv.COLOR_BGR2RGB,
+    )
+    return ret_val
 
 
 def main():
@@ -122,7 +143,7 @@ def main():
     cv.waitKey()
 
 
-def with_video():
+def show_video():
     cap = cv.VideoCapture(0)
     while True:
         sleep(0.01)
@@ -140,4 +161,4 @@ def with_video():
 
 
 if __name__ == "__main__":
-    with_video()
+    show_video()
