@@ -16,15 +16,15 @@ def main():
 
     cv.namedWindow("image")
     cv.createTrackbar('blur_size', 'image', 0, 255, nothing)
-    cv.createTrackbar('area_max', 'image', 100, 1000, nothing)
-    cv.createTrackbar('area_min', 'image', 10, 100, nothing)
+    cv.createTrackbar('area_max', 'image', 100_000, 100_000_000, nothing)
+    cv.createTrackbar('area_min', 'image', 100, 100_000, nothing)
     while True:
         ret, frame = cap.read()
         config.area_max = cv.getTrackbarPos('area_max', "image")
         config.area_min = cv.getTrackbarPos('area_min', "image")
 
-        # decoded = matrix_detection.decode_matrix(frame, config)
-        cv.imshow("image", frame)
+        decoded = matrix_detection.decode_matrix(frame, config)
+        cv.imshow("image", decoded["final"])
         if cv.waitKey(1) == 27:
             break
 
