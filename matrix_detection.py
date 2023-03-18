@@ -109,6 +109,10 @@ def decode_matrix(image, config: Config):
             cv.THRESH_BINARY_INV
         )
 
+    kernel = np.ones((5, 5), np.uint8)
+
+    morph = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel)
+    morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel)
     contours, heirarchy = cv.findContours(
         thresholded,
         cv.RETR_TREE,
@@ -123,7 +127,9 @@ def decode_matrix(image, config: Config):
     )
     contours_with_quads = find_quads(contours_with_valid_area)
 
-    ret_val = {}
+    ret_val = {
+        "thres": thresholded
+    }
 
     ret_val["final"] = cv.cvtColor(
         draw_contours_on_image(contours_with_quads, image),
