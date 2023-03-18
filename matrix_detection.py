@@ -48,7 +48,7 @@ def if_quad(contour):
 
 
 def find_quads(contours) -> List[int]:
-    return list(filter(lambda x: x[1], contours))
+    return list(filter(lambda x: if_quad(x[1]), contours))
 
 
 def find_inner_most_contours(heirarchy):
@@ -121,16 +121,12 @@ def decode_matrix(image, config: Config):
         config.area_min,
         config.area_max,
     )
+    contours_with_quads = find_quads(contours_with_valid_area)
 
-    ret_val = {
-        # "thresholded": thresholded,
-        # "blurred": blurred,
-    }
+    ret_val = {}
 
-    # ret_val = {k: cv.cvtColor(v, cv.COLOR_GRAY2RGB)
-    #            for k, v in ret_val.items()}
     ret_val["final"] = cv.cvtColor(
-        draw_contours_on_image(contours_with_valid_area, image),
+        draw_contours_on_image(contours_with_quads, image),
         cv.COLOR_BGR2RGB,
     )
     return ret_val
