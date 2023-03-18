@@ -1,1 +1,1 @@
-{"threshold_max": 255, "threshold": 199, "threshold_min": 0, "blur_size": 2, "area_max": 66512, "area_min": 10000, "block_size": 31, "c": 3, "adaptive_threshold": false, "quad_precision": 1000.0, "saved_time": 1679128977.8319871}
+{"threshold_max": 255, "threshold": 199, "threshold_min": 0, "blur_size": 3, "area_max": 66512, "area_min": 10000, "block_size": 31, "c": 3, "adaptive_threshold": false, "quad_precision": 1000.0, "saved_time": 1679128977.8319871}
