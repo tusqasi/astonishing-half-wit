@@ -123,14 +123,14 @@ def decode_matrix(image, config: Config):
     )
 
     ret_val = {
-        "thresholded": thresholded,
-        "blurred": blurred,
+        # "thresholded": thresholded,
+        # "blurred": blurred,
     }
 
-    ret_val = {k: cv.cvtColor(v, cv.COLOR_GRAY2RGB)
-               for k, v in ret_val.items()}
+    # ret_val = {k: cv.cvtColor(v, cv.COLOR_GRAY2RGB)
+    #            for k, v in ret_val.items()}
     ret_val["final"] = cv.cvtColor(
-        draw_contours_on_image(contours, image),
+        draw_contours_on_image(contours_with_valid_area, image),
         cv.COLOR_BGR2RGB,
     )
     return ret_val

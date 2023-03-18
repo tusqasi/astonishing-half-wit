@@ -20,8 +20,8 @@ def main():
     cv.createTrackbar('area_min', 'image', 10, 100, nothing)
     while True:
         ret, frame = cap.read()
-        # config.area_max = cv.getTrackbarPos('area_max', "image")
-        # config.area_min = cv.getTrackbarPos('area_min', "image")
+        config.area_max = cv.getTrackbarPos('area_max', "image")
+        config.area_min = cv.getTrackbarPos('area_min', "image")
 
         # decoded = matrix_detection.decode_matrix(frame, config)
         cv.imshow("image", frame)
