@@ -95,8 +95,8 @@ def find_extreme_points(contour):
 
 def decode_matrix(image, config: Config):
     gray = cv.cvtColor(image,  cv.COLOR_BGR2GRAY)
-    blurred = cv.medianBlur(gray,  config.blur_size)
-
+    # blurred = cv.medianBlur(gray,  config.blur_size)
+    blurred = gray
     if config.adaptive_threshold:
         thresholded = cv.adaptiveThreshold(
             blurred, config.threshold_max, cv.ADAPTIVE_THRESH_MEAN_C,
@@ -109,14 +109,15 @@ def decode_matrix(image, config: Config):
             cv.THRESH_BINARY_INV
         )
 
-    kernel = np.ones((5, 5), np.uint8)
-
-    morph = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel)
-    morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel)
+    kernel_open = np.ones((3, 3), np.uint8)
+    kernel_close = np.ones((7, 7), np.uint8)
+    morph = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel_close)
+    morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel_open)
     contours, heirarchy = cv.findContours(
-        thresholded,
+        morph,
         cv.RETR_TREE,
-        cv.CHAIN_APPROX_NONE)
+        cv.CHAIN_APPROX_NONE,
+    )
 
     contours = list(enumerate(contours))
 
@@ -128,7 +129,7 @@ def decode_matrix(image, config: Config):
     contours_with_quads = find_quads(contours_with_valid_area)
 
     ret_val = {
-        "thres": thresholded
+        "thres": morph
     }
 
     ret_val["final"] = cv.cvtColor(
