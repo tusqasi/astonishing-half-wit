@@ -7,15 +7,6 @@ from models.configuration import Config
 def main(retries):
     config = Config.load_config()
     cap = cv.VideoCapture(0)
-
-    if not cap.grab():
-        print("Video Not working")
-        print("Retrying")
-        return main(retries - 1)
-    elif retries == 0:
-        print("Done retrying")
-        return None
-
     cap.set(cv.CAP_PROP_FPS, 30)
     cap.set(cv.CAP_PROP_AUTO_EXPOSURE, 3)
 
