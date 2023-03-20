@@ -14,7 +14,8 @@ class Config:
     area_min: int = field(default=-1)
     block_size: int = field(default=3)
     c: float = field(default=3)
-    adaptive_threshold: bool = False
+    adaptive_threshold: bool = field(default=False)
+    quad_precision: float = field(default=0.001)
 
     @staticmethod
     def from_dict(argDict):

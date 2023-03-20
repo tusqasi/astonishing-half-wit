@@ -41,14 +41,14 @@ def draw_points_on_image(points, image):
     return image
 
 
-def if_quad(contour):
+def if_quad(contour, precision: float):
     peri = cv.arcLength(contour, True)
-    approx = cv.approxPolyDP(contour, 0.1 * peri, True)
+    approx = cv.approxPolyDP(contour, precision * peri, True)
     return cv.convexHull(approx, returnPoints=False) == 4,
 
 
-def find_quads(contours) -> List[int]:
-    return list(filter(lambda x: x[1], contours))
+def find_quads(contours, precision: float) -> List[int]:
+    return list(filter(lambda x: if_quad(x[1], precision), contours))
 
 
 def find_inner_most_contours(heirarchy):
@@ -94,6 +94,7 @@ def find_extreme_points(contour):
 
 
 def decode_matrix(image, config: Config):
+
     gray = cv.cvtColor(image,  cv.COLOR_BGR2GRAY)
     blurred = cv.medianBlur(gray,  config.blur_size)
 
@@ -108,9 +109,13 @@ def decode_matrix(image, config: Config):
             config.threshold_max,
             cv.THRESH_BINARY_INV
         )
+    kernel_open = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+    kernel_close = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+    morph = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel_close)
+    morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel_open)
 
     contours, heirarchy = cv.findContours(
-        thresholded,
+        morph,
         cv.RETR_TREE,
         cv.CHAIN_APPROX_NONE)
 
@@ -121,16 +126,20 @@ def decode_matrix(image, config: Config):
         config.area_min,
         config.area_max,
     )
+    quad_contours = find_quads(
+        contours_with_valid_area,
+        config.quad_precision)
 
+    print(
+        f"Total contours: {len(contours)}, area_filtered: {len(contours_with_valid_area)}, quads: {len(quad_contours)}")
     ret_val = {
-        "thresholded": thresholded,
-        "blurred": blurred,
+        "morph": morph,
     }
 
     ret_val = {k: cv.cvtColor(v, cv.COLOR_GRAY2RGB)
                for k, v in ret_val.items()}
     ret_val["final"] = cv.cvtColor(
-        draw_contours_on_image(contours, image),
+        draw_contours_on_image(quad_contours, image),
         cv.COLOR_BGR2RGB,
     )
     return ret_val
