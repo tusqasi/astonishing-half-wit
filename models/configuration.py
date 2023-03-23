@@ -13,6 +13,7 @@ class Config:
     area_max: int = field(default=inf)
     area_min: int = field(default=-1)
     block_size: int = field(default=3)
+    quad_precision: float = field(default=0.01)
     c: float = field(default=3)
     adaptive_threshold: bool = False
 
@@ -27,6 +28,10 @@ class Config:
         try:
             with open(path, "r") as fp:
                 config_dict: dict = json.loads(fp.read())
+                time_now = time.localtime(config_dict["saved_time"])
+                print(time.strftime("%a, %d %b %Y %H:%M:%S", time_now))
+
+                # Remove saved_time from
                 config_dict.pop("saved_time", None)
                 return Config.from_dict(config_dict)
         except (FileNotFoundError, IsADirectoryError, PermissionError):
