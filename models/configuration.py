@@ -13,7 +13,7 @@ class Config:
     area_max: int = field(default=inf)
     area_min: int = field(default=-1)
     block_size: int = field(default=3)
-    quad_precision: float = field(default=0.01)
+    quad_precision: float = field(default=0.05)
     c: float = field(default=3)
     adaptive_threshold: bool = False
 

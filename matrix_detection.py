@@ -1,5 +1,5 @@
 from math import inf
-from typing import List
+from typing import List, Dict
 import numpy as np
 import cv2 as cv
 import cv2
@@ -16,11 +16,8 @@ GREEN = (0, 255, 0)
 
 
 def find_inner_contours(heirarchy) -> List[int]:
-    return list(filter(
-        lambda x:
-        x[1][2] == -1,
-        enumerate(heirarchy[0])
-    ))
+    return [x for x in enumerate(heirarchy[0])
+            if x[1][2] == -1]
 
 
 def draw_contours_on_image(contours: dict, image):
@@ -42,28 +39,18 @@ def draw_points_on_image(points, image):
     return image
 
 
-def if_quad(contour, precision):
+def is_quad(contour, precision):
     peri = cv.arcLength(contour, True)
     approx = cv.approxPolyDP(contour, precision * peri, True)
-    return cv.convexHull(approx, returnPoints=False) == 4,
+    return len(approx) <= 6
 
 
-def find_quads(contours, precision) -> List[int]:
-    return {k: v for k, v in contours.items() if if_quad(v, precision)}
+def find_quads(contours, precision: float) -> Dict:
+    return {k: v for k, v in contours.items() if is_quad(v, precision)}
 
 
 def find_inner_most_contours(heirarchy):
-    return list(
-        map(
-            lambda k, v:
-            v,
-            filter(
-                lambda h:
-                h[1][2] == -1,
-                enumerate(heirarchy)
-            )
-        )
-    )
+    return [h[1] for h in heirarchy if h[1][2] == -1]
 
 
 def find_contour_containg_matrix(heirarchy) -> List[int]:
@@ -77,11 +64,12 @@ def find_contour_containg_matrix(heirarchy) -> List[int]:
 
 
 def filter_by_area(contours, min_area: int, max_area: int):
-    return {
-        k: v for k, v in contours.items()
-        if cv.contourArea(v) > max_area
-        or cv.contourArea(v) < min_area
-    }
+    ret_val = {}
+    for k, v in contours.items():
+        area = cv.contourArea(v)
+        if area < max_area and area > min_area:
+            ret_val[k] = v
+    return ret_val
 
 
 def find_extreme_points(contour, precision):
@@ -89,31 +77,49 @@ def find_extreme_points(contour, precision):
     return cv.approxPolyDP(contour, precision * peri, True)
 
 
+def find_external_point(image):
+    contours = cv2.findContours(
+        image, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contours = contours[0] if len(contours) == 2 else contours[1]
+    return contours
+
+
+def find_quads_2(contours):
+    ret_val = {}
+    for k, c in contours:
+        rot_rect = cv2.minAreaRect(c)
+        box = cv2.boxPoints(rot_rect)
+        box = np.int0(box)
+        ret_val[k] = box
+    return ret_val
+
+
 def decode_matrix(image, config: Config):
     gray = cv.cvtColor(image,  cv.COLOR_BGR2GRAY)
-    blurred = cv.medianBlur(gray,  config.blur_size)
+    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
+
     if config.adaptive_threshold:
-        thresholded = cv.adaptiveThreshold(
+        morph = cv.adaptiveThreshold(
             blurred, config.threshold_max, cv.ADAPTIVE_THRESH_MEAN_C,
             cv.THRESH_BINARY_INV, config.block_size,  config.c)
     else:
-        _, thresholded = cv.threshold(
+        _, morph = cv.threshold(
             blurred,
             config.threshold,
             config.threshold_max,
             cv.THRESH_BINARY_INV
         )
 
-    kernel_open = np.ones((3, 3), np.uint8)
-    kernel_close = np.ones((7, 7), np.uint8)
-    morph = cv.morphologyEx(thresholded, cv.MORPH_CLOSE, kernel_close)
+    kernel_open = np.ones((5, 5), np.uint8)
+    kernel_close = np.ones((3, 3), np.uint8)
+    morph = cv.morphologyEx(morph, cv.MORPH_CLOSE, kernel_close)
     morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel_open)
+
     contours, heirarchy = cv.findContours(
         morph,
         cv.RETR_TREE,
-        cv.CHAIN_APPROX_NONE,
+        cv.CHAIN_APPROX_SIMPLE,
     )
-
     contours = dict(enumerate(contours))
 
     contours_with_valid_area = filter_by_area(
@@ -125,19 +131,14 @@ def decode_matrix(image, config: Config):
         contours_with_valid_area,
         config.quad_precision,
     )
-    contours_with_matrix = find_contour_containg_matrix(heirarchy)
 
     ret_val = {
         "thres": morph
     }
-    with_quads_and_area = {
-        k: v for k, v in contours_with_quads.items()
-        if k in contours_with_matrix
-    }
     ret_val["final"] = cv.cvtColor(
         draw_contours_on_image(
-            with_quads_and_area,
-            image,
+            contours_with_quads,
+            cv2.cvtColor(image, cv.COLOR_BGR2RGB),
         ),
         cv.COLOR_BGR2RGB,
     )

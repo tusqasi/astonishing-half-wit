@@ -1,13 +1,13 @@
 {
 	"threshold_max": 255,
-	"threshold": 199,
+	"threshold": 100,
 	"threshold_min": 0,
 	"blur_size": 3,
-	"area_max": 2000,
-	"area_min": 1000,
+	"area_max": 13000,
+	"area_min": 6000,
 	"block_size": 31,
-	"c": 3,
+	"c": 7,
 	"adaptive_threshold": true,
-	"quad_precision": 0.1,
+	"quad_precision": 0.03,
 	"saved_time": 1679128977.8319871
 }
