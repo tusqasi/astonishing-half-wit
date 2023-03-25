@@ -3,11 +3,11 @@
 	"threshold": 100,
 	"threshold_min": 0,
 	"blur_size": 3,
-	"area_max": 13000,
-	"area_min": 6000,
+	"area_max": 90000,
+	"area_min": 1000,
 	"block_size": 31,
 	"c": 7,
 	"adaptive_threshold": true,
-	"quad_precision": 0.03,
+	"quad_precision": 0.01,
 	"saved_time": 1679128977.8319871
 }

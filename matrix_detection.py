@@ -42,7 +42,10 @@ def draw_points_on_image(points, image):
 def is_quad(contour, precision):
     peri = cv.arcLength(contour, True)
     approx = cv.approxPolyDP(contour, precision * peri, True)
-    return len(approx) <= 6
+    size_contours = len(contour)
+    print(size_contours)
+    size_approx = len(approx)
+    return  6 > size_approx > 3
 
 
 def find_quads(contours, precision: float) -> Dict:
@@ -95,9 +98,11 @@ def find_quads_2(contours):
 
 
 def decode_matrix(image, config: Config):
+    image = cv2.fastNlMeansDenoising(image,  None, 4, 3, 5)
     gray = cv.cvtColor(image,  cv.COLOR_BGR2GRAY)
-    blurred = cv2.GaussianBlur(gray, (7, 7), 0)
-
+    # blurred = cv2.medianBlur(gray, 5)
+    blurred = cv2.GaussianBlur(gray, (3, 3), 3, 3)
+    blurred = gray
     if config.adaptive_threshold:
         morph = cv.adaptiveThreshold(
             blurred, config.threshold_max, cv.ADAPTIVE_THRESH_MEAN_C,
@@ -110,16 +115,23 @@ def decode_matrix(image, config: Config):
             cv.THRESH_BINARY_INV
         )
 
-    kernel_open = np.ones((5, 5), np.uint8)
-    kernel_close = np.ones((3, 3), np.uint8)
+    kernel_open = cv.getStructuringElement(cv.MORPH_RECT, (5, 5))
+    kernel_close = cv.getStructuringElement(cv.MORPH_RECT, (3, 3))
+    kernel_dialate = cv.getStructuringElement(cv.MORPH_CROSS, (3, 3))
     morph = cv.morphologyEx(morph, cv.MORPH_CLOSE, kernel_close)
     morph = cv.morphologyEx(morph, cv.MORPH_OPEN, kernel_open)
+    morph = cv.dilate(morph, kernel_open, iterations=1)
 
     contours, heirarchy = cv.findContours(
         morph,
         cv.RETR_TREE,
         cv.CHAIN_APPROX_SIMPLE,
     )
+    # contours, heirarchy = cv.findContours(
+    #     morph,
+    #     cv.RETR_EXTERNAL,
+    #     cv.CHAIN_APPROX_SIMPLE,
+    # )
     contours = dict(enumerate(contours))
 
     contours_with_valid_area = filter_by_area(
@@ -138,7 +150,7 @@ def decode_matrix(image, config: Config):
     ret_val["final"] = cv.cvtColor(
         draw_contours_on_image(
             contours_with_quads,
-            cv2.cvtColor(image, cv.COLOR_BGR2RGB),
+            cv2.cvtColor(blurred, cv.COLOR_BGR2RGB),
         ),
         cv.COLOR_BGR2RGB,
     )
